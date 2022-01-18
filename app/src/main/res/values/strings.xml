@@ -1,0 +1,23 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="app_name">Quick Notes</string>
+    <string name="my_notes">My Notes</string>
+    <string name="search">search</string>
+    <string name="search_note">Search Note</string>
+    <string name="add">Add</string>
+    <string name="back">back</string>
+    <string name="done">done</string>
+    <string name="note_title">Note Title</string>
+    <string name="note_subtitle">Note Subtitle</string>
+    <string name="enter_your_note_here" tools:ignore="TypographyEllipsis">Your Note Here...</string>
+    <string name="miscellaneous">Edit Your Note</string>
+    <string name="select_your_theme">Note Color</string>
+    <string name="add_image">Add Image</string>
+    <string name="add_url">Add URL</string>
+    <string name="enter_url">Enter url</string>
+    <string name="cancel">Cancel</string>
+    <string name="remove">remove</string>
+    <string name="delete_note">Delete Note</string>
+    <string name="are_you_sure_you_want_to_delete_this_note">Are you sure you want to delete this note?</string>
+    <string name="delete">Delete</string>
+    <string name="save">Save</string>
+</resources>
