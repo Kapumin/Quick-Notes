@@ -1,5 +1,6 @@
 package com.abjt.melnotes.activities;
 
+
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.splashscreen.SplashScreen;
@@ -8,6 +9,7 @@ import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
+import android.content.IntentSender;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.Editable;
@@ -21,6 +23,14 @@ import com.abjt.melnotes.database.NoteDatabase;
 import com.abjt.melnotes.entities.Note;
 import com.abjt.melnotes.listeners.NotesListener;
 import com.abjt.melnotes.utilities.Constants;
+import com.abjt.melnotes.utilities.Toaster;
+import com.google.android.material.snackbar.Snackbar;
+import com.google.android.play.core.appupdate.AppUpdateManager;
+import com.google.android.play.core.appupdate.AppUpdateManagerFactory;
+import com.google.android.play.core.install.InstallStateUpdatedListener;
+import com.google.android.play.core.install.model.AppUpdateType;
+import com.google.android.play.core.install.model.InstallStatus;
+import com.google.android.play.core.install.model.UpdateAvailability;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,6 +47,10 @@ public class MainActivity extends AppCompatActivity implements NotesListener {
 
     private int noteClickedPosition = -1;
 
+    private AppUpdateManager appUpdateManager;
+
+    private Toaster toaster;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,6 +58,7 @@ public class MainActivity extends AppCompatActivity implements NotesListener {
         SplashScreen.installSplashScreen(MainActivity.this);
         setContentView(R.layout.activity_main);
 
+        updateManager();
         init();
         //GetNotes
         getNotes(Constants.REQUEST_CODE_SHOW_NOTES, false);
@@ -52,7 +67,30 @@ public class MainActivity extends AppCompatActivity implements NotesListener {
 
     }
 
+    private void updateManager() {
+        appUpdateManager = AppUpdateManagerFactory.create(this);
+        appUpdateManager.getAppUpdateInfo().addOnSuccessListener(appUpdateInfo -> {
+            if (appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE
+                    && appUpdateInfo.isUpdateTypeAllowed(AppUpdateType.FLEXIBLE)) {
+                try {
+                    appUpdateManager.startUpdateFlowForResult(
+                            appUpdateInfo,
+                            AppUpdateType.FLEXIBLE,
+                            MainActivity.this,
+                            Constants.REQUEST_APP_UPDATE_CODE
+                    );
+                } catch (IntentSender.SendIntentException e) {
+                    e.printStackTrace();
+                    toaster.showToast("Something Went Wrong Try Again");
+                }
+            }
+        });
+
+        appUpdateManager.registerListener(installStateUpdatedListener);
+    }
+
     private void init() {
+        toaster = new Toaster(getApplicationContext());
         imageAddNoteMain = findViewById(R.id.imageAddNoteMain);
         notesRecView = findViewById(R.id.notesRecView);
         inputSearch = findViewById(R.id.inputSearch);
@@ -139,6 +177,8 @@ public class MainActivity extends AppCompatActivity implements NotesListener {
             if (data != null) {
                 getNotes(Constants.REQUEST_CODE_UPDATE_NOTE, data.getBooleanExtra(Constants.IS_NOTE_DELETED, false));
             }
+        } else if (requestCode == Constants.REQUEST_APP_UPDATE_CODE && resultCode != RESULT_OK) {
+            toaster.showToast("Update Cancelled");
         }
     }
 
@@ -149,5 +189,28 @@ public class MainActivity extends AppCompatActivity implements NotesListener {
         intent.putExtra(Constants.IS_VIEW_OR_UPDATE, true);
         intent.putExtra(Constants.KEY_NOTE, note);
         startActivityForResult(intent, Constants.REQUEST_CODE_UPDATE_NOTE);
+    }
+
+    private final InstallStateUpdatedListener installStateUpdatedListener = installState -> {
+        if (installState.installStatus() == InstallStatus.DOWNLOADED) {
+            showCompleteUpdate();
+        }
+    };
+
+    private void showCompleteUpdate() {
+        Snackbar snackbar = Snackbar.make(
+                findViewById(android.R.id.content), "New Update is Ready!",
+                Snackbar.LENGTH_INDEFINITE
+        );
+        snackbar.setAction("Install", v -> appUpdateManager.completeUpdate());
+        snackbar.show();
+    }
+
+    @Override
+    protected void onStop() {
+        if (appUpdateManager != null) {
+            appUpdateManager.unregisterListener(installStateUpdatedListener);
+        }
+        super.onStop();
     }
 }

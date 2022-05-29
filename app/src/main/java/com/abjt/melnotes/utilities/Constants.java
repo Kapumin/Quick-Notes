@@ -10,4 +10,6 @@ public class Constants {
     public static final String IS_VIEW_OR_UPDATE = "isViewOrUpdate";
     public static final String KEY_NOTE = "note";
     public static final String IS_NOTE_DELETED = "isNoteDelete";
+
+    public static final int REQUEST_APP_UPDATE_CODE = 6;
 }
